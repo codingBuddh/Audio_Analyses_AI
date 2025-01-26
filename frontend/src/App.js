@@ -66,9 +66,9 @@ function App() {
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
+      const processChunk = async () => {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) return;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n\n');
@@ -82,7 +82,6 @@ function App() {
           setTranslatedTranscript(prev => {
             const lastSegment = prev[prev.length - 1];
             if (lastSegment && lastSegment.start_seconds === data.translated.start_seconds) {
-              // Append character to existing segment
               return [
                 ...prev.slice(0, -1),
                 {
@@ -91,7 +90,6 @@ function App() {
                 }
               ];
             } else {
-              // Create new segment
               return [
                 ...prev,
                 {
@@ -106,10 +104,15 @@ function App() {
         
         // Keep incomplete message in buffer
         buffer = lines[lines.length - 1];
-      }
+        
+        // Process next chunk immediately
+        processChunk();
+      };
+
+      // Start processing chunks
+      processChunk();
     } catch (error) {
       setError(error.message);
-    } finally {
       setLoading(false);
     }
   };
