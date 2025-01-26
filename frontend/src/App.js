@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AudioAnalysisVisualization from './components/AudioAnalysisVisualization';
 
 function App() {
   const [url, setUrl] = useState('');
@@ -9,6 +10,7 @@ function App() {
   const [targetLanguage, setTargetLanguage] = useState('es');
   const [analysisReport, setAnalysisReport] = useState(null);
   const [audioFilePath, setAudioFilePath] = useState('');
+  const [showRawData, setShowRawData] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -222,11 +224,14 @@ function App() {
 
               {/* Translated Transcript */}
               {translatedTranscript.length > 0 && (
-                <div className="bg-surface p-6 rounded-xl">
+                <div className="bg-surface p-6 rounded-xl transition-all duration-500 ease-in-out transform translate-x-0 opacity-100">
                   <h2 className="text-xl font-semibold mb-4 text-accent">Translated Text</h2>
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-4">
                     {translatedTranscript.map((segment, index) => (
-                      <div key={index} className="bg-background p-4 rounded-lg">
+                      <div 
+                        key={index} 
+                        className="bg-background p-4 rounded-lg transition-all duration-300 ease-in-out hover:scale-105"
+                      >
                         <div className="text-secondary text-sm mb-2">{segment.start_timestamp}</div>
                         <div className="text-text">{segment.text}</div>
                       </div>
@@ -244,7 +249,7 @@ function App() {
                 value={targetLanguage} 
                 onChange={(e) => setTargetLanguage(e.target.value)}
                 disabled={loading}
-                className="px-6 py-3 bg-surface text-text rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                className="px-6 py-3 bg-surface text-text rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all duration-200 ease-in-out hover:bg-surface/90"
               >
                 <option value="es">Spanish</option>
                 <option value="fr">French</option>
@@ -254,14 +259,14 @@ function App() {
               <button 
                 onClick={handleTranslate} 
                 disabled={loading}
-                className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Translating...' : 'Translate'}
               </button>
               <button 
                 onClick={handleAnalyze} 
                 disabled={loading}
-                className="px-8 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Analyzing...' : 'Analyze Audio'}
               </button>
@@ -271,10 +276,23 @@ function App() {
           {/* Analysis Report */}
           {analysisReport && (
             <div className="bg-surface p-6 rounded-xl">
-              <h2 className="text-xl font-semibold mb-4 text-primary">Audio Analysis Report</h2>
-              <pre className="bg-background p-4 rounded-lg text-sm overflow-x-auto">
-                {JSON.stringify(analysisReport, null, 2)}
-              </pre>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-primary">Audio Analysis Report</h2>
+                <button
+                  onClick={() => setShowRawData(!showRawData)}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  {showRawData ? 'Show Visualizations' : 'Show Raw Data'}
+                </button>
+              </div>
+              
+              {showRawData ? (
+                <pre className="bg-background p-4 rounded-lg text-sm overflow-x-auto">
+                  {JSON.stringify(analysisReport, null, 2)}
+                </pre>
+              ) : (
+                <AudioAnalysisVisualization analysis={analysisReport.audio_analysis} />
+              )}
             </div>
           )}
         </div>

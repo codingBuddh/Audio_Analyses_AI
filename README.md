@@ -1,94 +1,128 @@
-## Getting Started
+# Audio Analyser
 
-### Prerequisites
+Audio Analyser is a powerful tool for analyzing, transcribing, and translating audio content from YouTube videos. It provides detailed insights into audio characteristics, speech patterns, and emotional content, along with accurate transcription and translation capabilities.
 
-1. Python 3.8+
-2. Node.js 16+
-3. Ollama installed and running locally
-4. llama3.2:latest model downloaded
+## Features
 
-### Installation
+- **Audio Analysis**
+  - Pitch analysis (average, variability, range)
+  - Signal quality metrics (RMS, noise floor, SNR)
+  - Voice quality assessment (jitter, shimmer, quality score)
+  - Emotion detection and intensity analysis
+  - Speech pattern analysis (pause count, duration, word rate)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/youtube-translator.git
-   cd youtube-translator
-   ```
+- **Transcription & Translation**
+  - Accurate YouTube video transcription
+  - Multi-language translation support
+  - Real-time translation streaming
+  - Timestamped transcript segments
 
-2. Set up the backend:
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-3. Set up the frontend:
-   ```bash
-   cd ../frontend
-   npm install
-   ```
-
-4. Create a `.env` file in the backend directory:
-   ```env
-   LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
-   LANGSMITH_API_KEY="your_langsmith_key"
-   LANGSMITH_PROJECT="your_project_name"
-   ```
-
-### Running the Application
-
-1. Start the backend server:
-   ```bash
-   cd backend
-   uvicorn main:app --reload
-   ```
-
-2. Start the frontend development server:
-   ```bash
-   cd ../frontend
-   npm start
-   ```
-
-3. Open your browser and navigate to `http://localhost:3000`
-
-## Usage
-
-1. Enter a YouTube URL in the input field
-2. Click "Submit" to extract the transcript
-3. Select a target language from the dropdown
-4. Click "Translate" to start the translation
-5. View both original and translated transcripts side by side
+- **Visualization**
+  - Interactive charts and graphs
+  - Detailed audio metrics visualization
+  - Comparative analysis views
+  - Raw data and visual toggle
 
 ## Technology Stack
 
 ### Backend
-- **FastAPI**: Python web framework for building APIs
-- **LangChain**: Framework for working with language models
-- **Ollama**: Local language model for translations
-- **YouTube Transcript API**: For extracting YouTube transcripts
+- Python 3.12
+- FastAPI
+- yt-dlp
+- SciPy
+- NumPy
+- NLTK
 
 ### Frontend
-- **React**: JavaScript library for building user interfaces
-- **CSS**: For styling the application
-- **Fetch API**: For making HTTP requests to the backend
+- React.js
+- Tailwind CSS
+- Chart.js
+- Axios
+
+## Installation
+
+### Backend Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/audio-analyser.git
+   cd audio-analyser/backend
+   ```
+
+2. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Start the server:
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm start
+   ```
+
+## Usage
+
+1. Open the application in your browser (default: http://localhost:3000)
+2. Enter a YouTube video URL
+3. View the transcription and analysis results
+4. Use the translation feature to translate the transcript
+5. Explore the detailed audio analysis visualizations
+
+## Screenshots
+
+![Home](screenshots/1.png)
+![transcription](screenshots/2.png)
+![translation](screenshots/3.png)
+![visualizations](screenshots/4.png)
+![visualizations](screenshots/5.png)
+![Analysis Results RAW](screenshots/6.png)
+
+## API Documentation
+
+The backend API is documented using Swagger UI. After starting the server, visit:
+
+```
+http://localhost:8000/docs
+```
 
 ## Configuration
 
-The application can be configured through the following environment variables:
+Create a `.env` file in the backend directory with the following variables:
 
-- `LANGSMITH_ENDPOINT`: LangSmith API endpoint
-- `LANGSMITH_API_KEY`: LangSmith API key
-- `LANGSMITH_PROJECT`: LangSmith project name
+```
+API_KEY=your_api_key_here
+```
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
+We welcome contributions! Please follow these steps:
 
 1. Fork the repository
-2. Create a new branch (`git checkout -b feature/YourFeature`)
+2. Create a new branch (`git checkout -b feature/YourFeatureName`)
 3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
+4. Push to the branch (`git push origin feature/YourFeatureName`)
 5. Open a pull request
 
 ## License
@@ -97,68 +131,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- Ollama for providing the local language model
-- YouTube Transcript API for easy transcript extraction
-- FastAPI and React communities for their excellent documentation
+- [FastAPI](https://fastapi.tiangolo.com/) for the backend framework
+- [React](https://reactjs.org/) for the frontend framework
+- [Chart.js](https://www.chartjs.org/) for data visualization
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) for YouTube video processing
 
-### New Endpoint: Audio Analysis
+## Roadmap
 
-**POST /analyze**
+- [ ] Add support for local audio file analysis
+- [ ] Implement advanced speech pattern recognition
+- [ ] Add more language translation options
+- [ ] Improve emotion detection accuracy
+- [ ] Add user authentication and history
 
-Analyzes the audio file and provides a detailed report.
+## Contact
 
-**Request Body:**
-```json
-{
-    "audio_path": "path/to/audio.wav",
-    "transcript": "The full transcript text"
-}
-```
-
-**Response:**
-```json
-{
-    "audio_analysis": {
-        "duration_seconds": 120.5,
-        "speech_rate_wpm": 150.2,
-        "pitch_analysis": {
-            "average_pitch": 220.5,
-            "pitch_variability": 15.2,
-            "pitch_range": 100.3
-        },
-        "signal_quality": {
-            "average_rms": 0.15,
-            "noise_floor": 0.01,
-            "signal_to_noise_ratio": 15.0
-        }
-    }
-}
-```
-```
-
-This updated README provides:
-
-1. A clear overview of the project
-2. Detailed installation and setup instructions
-3. Usage guide
-4. Technology stack information
-5. Configuration details
-6. Contribution guidelines
-7. License information
-8. Acknowledgments
-
-It should help users understand and use the application effectively while also providing necessary information for contributors.
-```
-
-This updated README provides:
-
-1. A clear overview of the project
-2. Detailed installation and setup instructions
-3. Usage guide
-4. Technology stack information
-5. Configuration details
-6. Contribution guidelines
-7. License information
-8. Acknowledgments
-
-It should help users understand and use the application effectively while also providing necessary information for contributors.
+For any inquiries, please contact [aman1024soni@gmail.com](mailto:aman1024soni@gmail.com)
