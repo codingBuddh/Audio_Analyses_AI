@@ -136,13 +136,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Chart.js](https://www.chartjs.org/) for data visualization
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) for YouTube video processing
 
-## Roadmap
-
-- [ ] Add support for local audio file analysis
-- [ ] Implement advanced speech pattern recognition
-- [ ] Add more language translation options
-- [ ] Improve emotion detection accuracy
-- [ ] Add user authentication and history
+## I have used Locally running LLM on my System. Feel free to use whatever you want.
 
 ## Contact
 
