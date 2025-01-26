@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+yt-dlp
+langchain-community
+langchain-core
+youtube-transcript-api
+pydantic>=2.7.1 
