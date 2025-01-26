@@ -83,6 +83,99 @@ class AnalyzeAudioService:
             "signal_to_noise_ratio": float(signal_noise_ratio)
         }
 
+    def analyze_speech_clarity(self, audio_file_path: str, transcript: str) -> Dict[str, float]:
+        """Analyze speech clarity using various metrics."""
+        sample_rate, data = wavfile.read(audio_file_path)
+        if len(data.shape) > 1:
+            data = data.mean(axis=1)  # Convert stereo to mono
+            
+        # Calculate zero-crossing rate
+        zero_crossings = np.sum(np.abs(np.diff(np.sign(data)))) / len(data)
+        
+        # Calculate spectral centroid
+        spectrum = np.abs(rfft(data))
+        frequencies = rfftfreq(len(data), 1/sample_rate)
+        spectral_centroid = np.sum(frequencies * spectrum) / np.sum(spectrum)
+        
+        return {
+            "zero_crossing_rate": float(zero_crossings),
+            "spectral_centroid": float(spectral_centroid),
+            "clarity_score": float(1 - (zero_crossings / spectral_centroid))  # Example metric
+        }
+
+    def analyze_voice_quality(self, audio_file_path: str) -> Dict[str, float]:
+        """Analyze voice quality using various metrics."""
+        sample_rate, data = wavfile.read(audio_file_path)
+        if len(data.shape) > 1:
+            data = data.mean(axis=1)  # Convert stereo to mono
+            
+        # Calculate jitter (pitch period variations)
+        peaks, _ = find_peaks(data, height=np.max(data)*0.5)
+        if len(peaks) > 1:
+            jitter = np.std(np.diff(peaks)) / np.mean(np.diff(peaks))
+        else:
+            jitter = 0.0
+        
+        # Calculate shimmer (amplitude variations)
+        if len(peaks) > 1:
+            shimmer = np.std(data[peaks]) / np.mean(data[peaks])
+        else:
+            shimmer = 0.0
+        
+        return {
+            "jitter": float(jitter),
+            "shimmer": float(shimmer),
+            "voice_quality_score": float(1 - (jitter + shimmer))  # Example metric
+        }
+
+    def analyze_emotion(self, audio_file_path: str) -> Dict[str, float]:
+        """Analyze emotional content using pitch and energy features."""
+        sample_rate, data = wavfile.read(audio_file_path)
+        if len(data.shape) > 1:
+            data = data.mean(axis=1)  # Convert stereo to mono
+            
+        # Calculate pitch and energy features
+        spectrum = np.abs(rfft(data))
+        pitch = np.argmax(spectrum)
+        energy = np.mean(data**2)
+        
+        # Simple emotion detection based on pitch and energy
+        emotion = "neutral"
+        if pitch > 300 and energy > 0.1:
+            emotion = "excited"
+        elif pitch < 200 and energy < 0.05:
+            emotion = "calm"
+        
+        return {
+            "detected_emotion": emotion,
+            "emotional_intensity": float(energy)
+        }
+
+    def analyze_speech_patterns(self, audio_file_path: str, transcript: str) -> Dict[str, float]:
+        """Analyze speech patterns including pauses and rhythm."""
+        sample_rate, data = wavfile.read(audio_file_path)
+        if len(data.shape) > 1:
+            data = data.mean(axis=1)  # Convert stereo to mono
+            
+        # Detect pauses
+        silence_threshold = 0.02 * np.max(data)
+        silent_intervals = np.where(data < silence_threshold)[0]
+        pause_durations = np.diff(silent_intervals) / sample_rate
+        
+        # Calculate pause metrics
+        pause_count = len(pause_durations)
+        avg_pause_duration = np.mean(pause_durations) if pause_count > 0 else 0.0
+        
+        # Calculate speech rhythm
+        words = word_tokenize(transcript)
+        word_rate = len(words) / (len(data) / sample_rate)
+        
+        return {
+            "pause_count": int(pause_count),
+            "average_pause_duration": float(avg_pause_duration),
+            "word_rate": float(word_rate)
+        }
+
     def generate_report(self, audio_file_path: str, transcript: str) -> Dict[str, Any]:
         """Generate a comprehensive audio analysis report."""
         try:
@@ -92,15 +185,16 @@ class AnalyzeAudioService:
             sample_rate, data = wavfile.read(audio_file_path)
             audio_duration = len(data) / sample_rate
             
-            pitch_info = self.analyze_pitch_and_intonation(audio_file_path)
-            signal_info = self.measure_signal_quality(audio_file_path)
-
             return {
                 "audio_analysis": {
                     "duration_seconds": float(audio_duration),
                     "speech_rate_wpm": self.measure_speech_rate(transcript, audio_duration),
-                    "pitch_analysis": pitch_info,
-                    "signal_quality": signal_info
+                    "pitch_analysis": self.analyze_pitch_and_intonation(audio_file_path),
+                    "signal_quality": self.measure_signal_quality(audio_file_path),
+                    "speech_clarity": self.analyze_speech_clarity(audio_file_path, transcript),
+                    "voice_quality": self.analyze_voice_quality(audio_file_path),
+                    "emotion_analysis": self.analyze_emotion(audio_file_path),
+                    "speech_patterns": self.analyze_speech_patterns(audio_file_path, transcript)
                 }
             }
         except Exception as e:
