@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import numpy as np
@@ -13,6 +13,10 @@ from transformers import pipeline, AutoModelForAudioClassification, AutoFeatureE
 import soundfile as sf
 from langchain_community.document_loaders.youtube import YoutubeLoader, TranscriptFormat
 from langchain_community.document_loaders import YoutubeLoader
+from translation_service import TranslationService
+from fastapi.responses import StreamingResponse
+import json
+import asyncio
 
 warnings.filterwarnings("ignore")
 
@@ -28,6 +32,9 @@ app.add_middleware(
 
 MODEL_CACHE = None
 FEATURE_EXTRACTOR_CACHE = None
+
+# Initialize translation service
+translation_service = TranslationService()
 
 def load_model():
     global MODEL_CACHE, FEATURE_EXTRACTOR_CACHE
@@ -215,4 +222,29 @@ async def transcribe_video(request: ProcessRequest):
             "audio_file": download_youtube_audio(request.url)
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+class TranslateRequest(BaseModel):
+    transcript: list[dict]
+    target_language: str
+
+@app.post("/translate")
+async def translate_transcript(
+    request: TranslateRequest,
+    service: TranslationService = Depends(lambda: translation_service)
+):
+    async def generate():
+        for segment in request.transcript:
+            translated_text = await service.translate(segment["text"], request.target_language)
+            for char in translated_text:
+                yield f"data: {json.dumps({
+                    'original': segment,
+                    'translated': {
+                        'char': char,
+                        'start_seconds': segment['start_seconds'],
+                        'start_timestamp': segment['start_timestamp']
+                    }
+                })}\n\n"
+                await asyncio.sleep(0.02)  # Adjust speed as needed
+    
+    return StreamingResponse(generate(), media_type="text/event-stream") 

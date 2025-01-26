@@ -4,4 +4,8 @@ yt-dlp
 langchain-community
 langchain-core
 youtube-transcript-api
-pydantic>=2.7.1 
+pydantic>=2.7.1
+langchain-openai
+langsmith
+python-dotenv
+langchain-ollama

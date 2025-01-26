@@ -5,13 +5,16 @@ function App() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [transcript, setTranscript] = useState([]);
+  const [originalTranscript, setOriginalTranscript] = useState([]);
+  const [translatedTranscript, setTranslatedTranscript] = useState([]);
+  const [targetLanguage, setTargetLanguage] = useState('es');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setTranscript([]);
+    setOriginalTranscript([]);
+    setTranslatedTranscript([]);
 
     try {
       const response = await fetch('http://localhost:8000/process', {
@@ -30,7 +33,80 @@ function App() {
       }
 
       const data = await response.json();
-      setTranscript(data.transcript);
+      setOriginalTranscript(data.transcript);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTranslate = async () => {
+    setLoading(true);
+    setError(null);
+    setTranslatedTranscript([]);
+
+    try {
+      const response = await fetch('http://localhost:8000/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transcript: originalTranscript,
+          target_language: targetLanguage
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Translation failed');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        
+        // Process all complete messages
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i].replace('data: ', '');
+          if (line.trim() === '') continue;
+          
+          const data = JSON.parse(line);
+          setTranslatedTranscript(prev => {
+            const lastSegment = prev[prev.length - 1];
+            if (lastSegment && lastSegment.start_seconds === data.translated.start_seconds) {
+              // Append character to existing segment
+              return [
+                ...prev.slice(0, -1),
+                {
+                  ...lastSegment,
+                  text: lastSegment.text + data.translated.char
+                }
+              ];
+            } else {
+              // Create new segment
+              return [
+                ...prev,
+                {
+                  text: data.translated.char,
+                  start_seconds: data.translated.start_seconds,
+                  start_timestamp: data.translated.start_timestamp
+                }
+              ];
+            }
+          });
+        }
+        
+        // Keep incomplete message in buffer
+        buffer = lines[lines.length - 1];
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -62,15 +138,47 @@ function App() {
         </div>
       )}
 
-      {transcript.length > 0 && (
-        <div className="transcript">
-          <h2>Transcript</h2>
-          {transcript.map((segment, index) => (
-            <div key={index} className="transcript-segment">
-              <div className="timestamp">{segment.start_timestamp}</div>
-              <div className="text">{segment.text}</div>
+      {originalTranscript.length > 0 && (
+        <div className="transcript-container">
+          <div className="transcript-box">
+            <h2>Original Transcript</h2>
+            {originalTranscript.map((segment, index) => (
+              <div key={index} className="transcript-segment">
+                <div className="timestamp">{segment.start_timestamp}</div>
+                <div className="text">{segment.text}</div>
+              </div>
+            ))}
+          </div>
+
+          {translatedTranscript.length > 0 && (
+            <div className="transcript-box">
+              <h2>Translated Text</h2>
+              {translatedTranscript.map((segment, index) => (
+                <div key={index} className="transcript-segment">
+                  <div className="timestamp">{segment.start_timestamp}</div>
+                  <div className="text">{segment.text}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+        </div>
+      )}
+
+      {originalTranscript.length > 0 && (
+        <div className="translation-controls">
+          <select 
+            value={targetLanguage} 
+            onChange={(e) => setTargetLanguage(e.target.value)}
+            disabled={loading}
+          >
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="zh-cn">Chinese</option>
+          </select>
+          <button onClick={handleTranslate} disabled={loading}>
+            {loading ? 'Translating...' : 'Translate'}
+          </button>
         </div>
       )}
     </div>
