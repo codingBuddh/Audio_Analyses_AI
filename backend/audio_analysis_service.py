@@ -97,7 +97,7 @@ class AnalyzeAudioService:
 
             return {
                 "audio_analysis": {
-                    "duration_mins": float(audio_duration),
+                    "duration_seconds": float(audio_duration),
                     "speech_rate_wpm": self.measure_speech_rate(transcript, audio_duration),
                     "pitch_analysis": pitch_info,
                     "signal_quality": signal_info

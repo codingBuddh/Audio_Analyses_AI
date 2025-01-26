@@ -115,17 +115,20 @@ async def translate_transcript(
     service: TranslationService = Depends(lambda: translation_service)
 ):
     async def generate():
-        for segment in request.transcript:
-            translated_text = await service.translate(segment["text"], request.target_language)
-            for char in translated_text:
-                yield f"data: {json.dumps({
-                    'original': segment,
-                    'translated': {
-                        'char': char,
-                        'start_seconds': segment['start_seconds'],
-                        'start_timestamp': segment['start_timestamp']
-                    }
-                })}\n\n"
+        try:
+            for segment in request.transcript:
+                translated_text = await service.translate(segment["text"], request.target_language)
+                for char in translated_text:
+                    yield f"data: {json.dumps({
+                        'original': segment,
+                        'translated': {
+                            'char': char,
+                            'start_seconds': segment['start_seconds'],
+                            'start_timestamp': segment['start_timestamp']
+                        }
+                    })}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"  # Signal completion
     
     return StreamingResponse(generate(), media_type="text/event-stream")
 

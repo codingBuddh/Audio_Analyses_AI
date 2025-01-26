@@ -73,10 +73,19 @@ function App() {
 
       const processChunk = async () => {
         const { done, value } = await reader.read();
-        if (done) return;
+        if (done) {
+          setLoading(false);
+          return;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n\n');
+        
+        // Check for completion signal
+        if (lines.some(line => line.includes('[DONE]'))) {
+          setLoading(false);
+          return;
+        }
         
         // Process all complete messages
         for (let i = 0; i < lines.length - 1; i++) {
