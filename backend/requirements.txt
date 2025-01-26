@@ -9,3 +9,10 @@ langchain-openai
 langsmith
 python-dotenv
 langchain-ollama
+librosa>=0.10.0
+nltk>=3.8.1
+numpy>=1.24.3
+yt-dlp>=2023.7.6
+ffmpeg-python>=0.2.0
+pydub>=0.25.1
+scipy>=1.13.0

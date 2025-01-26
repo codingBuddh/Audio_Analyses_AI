@@ -6,6 +6,11 @@ from translation_service import TranslationService
 from fastapi.responses import StreamingResponse
 import json
 import asyncio
+import os
+from audio_analysis_service import AnalyzeAudioService
+from pathlib import Path
+from yt_dlp import YoutubeDL
+from pydub import AudioSegment
 
 app = FastAPI()
 
@@ -20,12 +25,52 @@ app.add_middleware(
 # Initialize translation service
 translation_service = TranslationService()
 
+# Initialize audio analysis service
+audio_analysis_service = AnalyzeAudioService()
+
+# Create audio directory if it doesn't exist
+audio_dir = Path("audio")
+audio_dir.mkdir(exist_ok=True)
+
+def download_audio(url: str, output_path: str) -> str:
+    try:
+        # Ensure the audio directory exists
+        audio_dir = Path("audio")
+        audio_dir.mkdir(exist_ok=True)
+        
+        # Create full output path
+        full_output_path = str(audio_dir / output_path)
+        
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': full_output_path,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'wav',
+            }],
+        }
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            downloaded_file = ydl.prepare_filename(info)
+            
+            # The file is already saved as WAV in the audio folder
+            wav_path = f"{full_output_path}.wav"
+            
+            return wav_path
+    except Exception as e:
+        print(f"Error downloading audio: {str(e)}")
+        raise
+
 class ProcessRequest(BaseModel):
     url: str
 
 class TranslateRequest(BaseModel):
     transcript: list[dict]
     target_language: str
+
+class AnalyzeRequest(BaseModel):
+    audio_path: str
+    transcript: str
 
 def get_youtube_transcript(url):
     try:
@@ -50,8 +95,17 @@ def get_youtube_transcript(url):
 @app.post("/process")
 async def process_video(request: ProcessRequest):
     try:
+        # Get transcript
         transcript = get_youtube_transcript(request.url)
-        return {"transcript": transcript}
+        
+        # Download audio
+        video_id = request.url.split('=')[-1]
+        audio_path = download_audio(request.url, video_id)
+        
+        return {
+            "transcript": transcript,
+            "audio_path": audio_path
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -73,4 +127,21 @@ async def translate_transcript(
                     }
                 })}\n\n"
     
-    return StreamingResponse(generate(), media_type="text/event-stream") 
+    return StreamingResponse(generate(), media_type="text/event-stream")
+
+@app.post("/analyze")
+async def analyze_audio(request: AnalyzeRequest):
+    try:
+        if not os.path.exists(request.audio_path):
+            raise HTTPException(status_code=404, detail="Audio file not found")
+        
+        # Create audio directory if it doesn't exist
+        os.makedirs(os.path.dirname(request.audio_path), exist_ok=True)
+        
+        return audio_analysis_service.generate_report(
+            request.audio_path,
+            request.transcript
+        )
+    except Exception as e:
+        print(f"Error in analyze_audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 

@@ -8,6 +8,8 @@ function App() {
   const [originalTranscript, setOriginalTranscript] = useState([]);
   const [translatedTranscript, setTranslatedTranscript] = useState([]);
   const [targetLanguage, setTargetLanguage] = useState('es');
+  const [analysisReport, setAnalysisReport] = useState(null);
+  const [audioFilePath, setAudioFilePath] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,6 +17,8 @@ function App() {
     setError(null);
     setOriginalTranscript([]);
     setTranslatedTranscript([]);
+    setAnalysisReport(null);
+    setAudioFilePath('');
 
     try {
       const response = await fetch('http://localhost:8000/process', {
@@ -34,6 +38,7 @@ function App() {
 
       const data = await response.json();
       setOriginalTranscript(data.transcript);
+      setAudioFilePath(data.audio_path);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -117,6 +122,40 @@ function App() {
     }
   };
 
+  const handleAnalyze = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!audioFilePath) {
+        throw new Error('Audio file path is not available');
+      }
+
+      const response = await fetch('http://localhost:8000/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          audio_path: audioFilePath,
+          transcript: originalTranscript.map(segment => segment.text).join(' ')
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Analysis failed');
+      }
+
+      const data = await response.json();
+      setAnalysisReport(data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="App">
       <h1>YouTube Transcript Extractor</h1>
@@ -182,6 +221,16 @@ function App() {
           <button onClick={handleTranslate} disabled={loading}>
             {loading ? 'Translating...' : 'Translate'}
           </button>
+          <button onClick={handleAnalyze} disabled={loading}>
+            {loading ? 'Analyzing...' : 'Analyze Audio'}
+          </button>
+        </div>
+      )}
+
+      {analysisReport && (
+        <div className="analysis-report">
+          <h2>Audio Analysis Report</h2>
+          <pre>{JSON.stringify(analysisReport, null, 2)}</pre>
         </div>
       )}
     </div>

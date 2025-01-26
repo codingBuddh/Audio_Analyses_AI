@@ -95,4 +95,45 @@ button:disabled {
     display: flex;
     gap: 10px;
     justify-content: center;
+    flex-wrap: wrap;
+}
+
+.translation-controls button {
+    padding: 8px 16px;
+    background-color: #28a745; /* Green for analyze button */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.translation-controls button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.translation-controls select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 120px;
+}
+
+.analysis-report {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-align: left;
+}
+
+.analysis-report pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: white;
+    padding: 15px;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
 } 
